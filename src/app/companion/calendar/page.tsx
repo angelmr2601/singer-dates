@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MonthCalendar from "@/components/MonthCalendar";
+import AppShell from "@/components/AppShell";
+import { Button } from "@/components/ui";
 
 function monthRange(d: Date) {
   const from = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -22,7 +24,10 @@ export default function CompanionCalendarPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const label = useMemo(() => {
-    return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(monthDate);
+    return new Intl.DateTimeFormat("es-ES", {
+      month: "long",
+      year: "numeric",
+    }).format(monthDate);
   }, [monthDate]);
 
   async function load() {
@@ -43,6 +48,7 @@ export default function CompanionCalendarPage() {
       setLoading(false);
       return;
     }
+
     const data = await res.json();
     setEvents(data.events ?? []);
     setLoading(false);
@@ -54,32 +60,47 @@ export default function CompanionCalendarPage() {
   }, [monthDate]);
 
   return (
-    <main style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>Calendario</h1>
-          <div style={{ marginTop: 6, color: "#555", textTransform: "capitalize" }}>{label}</div>
+    <AppShell title="Calendario">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-[14px] font-extrabold capitalize text-[rgb(var(--muted))]">
+          {label}
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <button onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))} style={{ padding: "10px 12px" }}>
+        <div className="grid grid-cols-3 gap-2 sm:flex">
+          <Button
+            variant="ghost"
+            onClick={() =>
+              setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))
+            }
+          >
             ◀ Mes
-          </button>
-          <button onClick={() => setMonthDate(new Date())} style={{ padding: "10px 12px" }}>
-            Hoy
-          </button>
-          <button onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))} style={{ padding: "10px 12px" }}>
-            Mes ▶
-          </button>
-        </div>
-      </header>
+          </Button>
 
-      {loading && <p style={{ marginTop: 16 }}>Cargando…</p>}
-      {err && <p style={{ marginTop: 16, color: "crimson" }}>{err}</p>}
+          <Button variant="ghost" onClick={() => setMonthDate(new Date())}>
+            Hoy
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() =>
+              setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))
+            }
+          >
+            Mes ▶
+          </Button>
+        </div>
+      </div>
+
+      {loading && <div className="text-[14px] text-[rgb(var(--muted))]">Cargando…</div>}
+      {err && <div className="text-[14px] font-semibold text-red-600">{err}</div>}
 
       {!loading && !err && (
-        <MonthCalendar monthDate={monthDate} events={events} linkBasePath="/companion/events" />
+        <MonthCalendar
+          monthDate={monthDate}
+          events={events}
+          linkBasePath="/companion/events"
+        />
       )}
-    </main>
+    </AppShell>
   );
 }

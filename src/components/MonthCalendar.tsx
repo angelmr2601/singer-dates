@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type CalEvent = {
   id: string;
@@ -16,34 +16,55 @@ type CalEvent = {
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
+
 function endOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
+
 function startOfGrid(monthStart: Date) {
-  // Lunes como primer día (ES). JS: 0 domingo..6 sábado
   const day = (monthStart.getDay() + 6) % 7; // lunes=0
   const s = new Date(monthStart);
   s.setDate(s.getDate() - day);
   s.setHours(0, 0, 0, 0);
   return s;
 }
+
 function addDays(d: Date, n: number) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
   return x;
 }
+
 function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
+
 function ymd(d: Date) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
 function fmtTime(iso: string) {
   const d = new Date(iso);
-  return new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+function fmtLongDate(d: Date) {
+  return new Intl.DateTimeFormat("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(d);
 }
 
 export default function MonthCalendar({
@@ -51,21 +72,21 @@ export default function MonthCalendar({
   events,
   linkBasePath,
 }: {
-  monthDate: Date;              // cualquier día del mes actual
+  monthDate: Date;
   events: CalEvent[];
-  linkBasePath: string;         // "/admin/events" o "/companion/events"
+  linkBasePath: string;
 }) {
   const monthStart = useMemo(() => startOfMonth(monthDate), [monthDate]);
   const monthEnd = useMemo(() => endOfMonth(monthDate), [monthDate]);
   const gridStart = useMemo(() => startOfGrid(monthStart), [monthStart]);
 
   const days = useMemo(() => {
-    // 6 semanas * 7 días = 42 celdas (calendario estable)
     return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
   }, [gridStart]);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalEvent[]>();
+
     for (const ev of events) {
       const d = new Date(ev.datetimeStart);
       const key = ymd(d);
@@ -73,111 +94,193 @@ export default function MonthCalendar({
       arr.push(ev);
       map.set(key, arr);
     }
-    // orden por hora
+
     for (const [k, arr] of map) {
-      arr.sort((a, b) => new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime());
+      arr.sort(
+        (a, b) =>
+          new Date(a.datetimeStart).getTime() -
+          new Date(b.datetimeStart).getTime()
+      );
       map.set(k, arr);
     }
+
     return map;
   }, [events]);
 
   const today = useMemo(() => new Date(), []);
+  const initialSelectedDay = useMemo(() => {
+    const todayInMonth =
+      today.getMonth() === monthDate.getMonth() &&
+      today.getFullYear() === monthDate.getFullYear();
 
-  const monthLabel = useMemo(() => {
-    return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(monthDate);
-  }, [monthDate]);
+    return todayInMonth ? today : monthStart;
+  }, [today, monthDate, monthStart]);
 
+  const [selectedDay, setSelectedDay] = useState<Date>(initialSelectedDay);
+
+  const selectedEvents = eventsByDay.get(ymd(selectedDay)) ?? [];
   const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
 
   return (
-    <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginTop: 12 }}>
+    <div className="grid gap-4">
+      {/* CABECERA DIAS */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {weekDays.map((w) => (
-          <div key={w} style={{ fontSize: 12, fontWeight: 800, color: "#555", textAlign: "center" }}>
+          <div
+            key={w}
+            className="text-center text-[11px] font-extrabold text-[rgb(var(--muted))] sm:text-[12px]"
+          >
             {w}
           </div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginTop: 8 }}>
+      {/* MOBILE: celdas compactas con puntos */}
+      <div className="grid grid-cols-7 gap-1 sm:hidden">
         {days.map((d) => {
           const inMonth = d >= monthStart && d <= monthEnd;
-          const key = ymd(d);
-          const dayEvents = eventsByDay.get(key) ?? [];
           const isToday = sameDay(d, today);
+          const isSelected = sameDay(d, selectedDay);
+          const dayEvents = eventsByDay.get(ymd(d)) ?? [];
 
           return (
-            <div
-              key={key}
-              style={{
-                border: "1px solid #e3e3e3",
-                borderRadius: 12,
-                padding: 8,
-                minHeight: 72,
-                background: inMonth ? "white" : "#fafafa",
-                opacity: inMonth ? 1 : 0.6,
-              }}
+            <button
+              key={ymd(d)}
+              type="button"
+              onClick={() => setSelectedDay(d)}
+              className={[
+                "min-h-[56px] rounded-2xl border p-1 text-left transition",
+                inMonth
+                  ? "border-[rgb(var(--border))] bg-white"
+                  : "border-[rgb(var(--border))] bg-black/[0.03] opacity-60",
+                isSelected ? "ring-2 ring-black/15" : "",
+              ].join(" ")}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 13,
-                    padding: "2px 6px",
-                    borderRadius: 999,
-                    background: isToday ? "#111" : "transparent",
-                    color: isToday ? "white" : "#111",
-                    lineHeight: "18px",
-                  }}
+              <div className="flex items-center justify-between">
+                <span
+                  className={[
+                    "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-extrabold",
+                    isToday ? "bg-black text-white" : "text-[rgb(var(--text))]",
+                  ].join(" ")}
                 >
                   {d.getDate()}
-                </div>
-                <div style={{ fontSize: 11, color: "#777" }}>{d.getMonth() + 1}</div>
+                </span>
               </div>
 
-              <div style={{ marginTop: 6, display: "grid", gap: 4 }}>
-                {dayEvents.slice(0, 4).map((ev) => {
-                  const c = ev.companion?.color ?? "#999999";
-                  const title = `${fmtTime(ev.datetimeStart)} · ${ev.place}`;
-                  return (
-                    <Link
-                      key={ev.id}
-                      href={`${linkBasePath}/${ev.id}`}
-                      style={{ textDecoration: "none", color: "inherit" }}
-                      title={title}
-                    >
-                      <div
-                        style={{
-                          borderLeft: `6px solid ${c}`,
-                          borderRadius: 10,
-                          padding: "6px 8px",
-                          background: "#f8f8f8",
-                          fontSize: 12,
-                          lineHeight: "14px",
-                        }}
-                      >
-                        <div style={{ fontWeight: 800 }}>{fmtTime(ev.datetimeStart)}</div>
-                        <div style={{ color: "#333", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {ev.place}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-
-                {dayEvents.length > 4 && (
-                  <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-                    +{dayEvents.length - 4} más…
-                  </div>
-                )}
+              <div className="mt-2 flex flex-wrap gap-1">
+                {dayEvents.slice(0, 3).map((ev) => (
+                  <span
+                    key={ev.id}
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ background: ev.companion?.color ?? "#9CA3AF" }}
+                  />
+                ))}
+                {dayEvents.length > 3 ? (
+                  <span className="text-[9px] font-bold text-[rgb(var(--muted))]">
+                    +{dayEvents.length - 3}
+                  </span>
+                ) : null}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-        Mes: <b style={{ textTransform: "capitalize" }}>{monthLabel}</b>
+      {/* MOBILE: lista del día seleccionado */}
+      <div className="sm:hidden">
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-white p-4 shadow-sm">
+          <div className="text-[14px] font-extrabold capitalize">
+            {fmtLongDate(selectedDay)}
+          </div>
+
+          <div className="mt-3 grid gap-2">
+            {selectedEvents.length === 0 ? (
+              <div className="text-[13px] text-[rgb(var(--muted))]">
+                No hay eventos este día.
+              </div>
+            ) : (
+              selectedEvents.map((ev) => (
+                <Link
+                  key={ev.id}
+                  href={`${linkBasePath}/${ev.id}`}
+                  className="block rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--bg))] p-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="mt-1 h-3 w-3 shrink-0 rounded-full"
+                      style={{ background: ev.companion?.color ?? "#9CA3AF" }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-extrabold text-[rgb(var(--muted))]">
+                        {fmtTime(ev.datetimeStart)}
+                      </div>
+                      <div className="mt-1 break-words text-[14px] font-extrabold">
+                        {ev.place}
+                      </div>
+                      <div className="mt-1 text-[12px] text-[rgb(var(--muted))]">
+                        {ev.companion?.name ?? "Sin acompañante"}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* DESKTOP/TABLET: calendario más completo */}
+      <div className="hidden grid-cols-7 gap-2 sm:grid">
+        {days.map((d) => {
+          const inMonth = d >= monthStart && d <= monthEnd;
+          const isToday = sameDay(d, today);
+          const dayEvents = eventsByDay.get(ymd(d)) ?? [];
+
+          return (
+            <div
+              key={ymd(d)}
+              className={[
+                "min-h-[110px] rounded-2xl border p-2",
+                inMonth
+                  ? "border-[rgb(var(--border))] bg-white"
+                  : "border-[rgb(var(--border))] bg-black/[0.03] opacity-60",
+              ].join(" ")}
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className={[
+                    "inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-[12px] font-extrabold",
+                    isToday ? "bg-black text-white" : "text-[rgb(var(--text))]",
+                  ].join(" ")}
+                >
+                  {d.getDate()}
+                </span>
+              </div>
+
+              <div className="mt-2 grid gap-1">
+                {dayEvents.slice(0, 4).map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`${linkBasePath}/${ev.id}`}
+                    className="block rounded-xl bg-[rgb(var(--bg))] px-2 py-1.5 text-[11px] transition hover:bg-black/5"
+                    style={{
+                      borderLeft: `5px solid ${ev.companion?.color ?? "#9CA3AF"}`,
+                    }}
+                  >
+                    <div className="font-extrabold">{fmtTime(ev.datetimeStart)}</div>
+                    <div className="truncate">{ev.place}</div>
+                  </Link>
+                ))}
+
+                {dayEvents.length > 4 ? (
+                  <div className="px-1 text-[11px] font-bold text-[rgb(var(--muted))]">
+                    +{dayEvents.length - 4} más
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
