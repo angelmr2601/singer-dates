@@ -8,7 +8,30 @@
   --border: 229 229 229;
 }
 
-* { -webkit-tap-highlight-color: transparent; }
+html,
+body {
+  height: 100%;
+}
 
-html, body { height: 100%; }
-body { background: rgb(var(--bg)); color: rgb(var(--text)); }
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}

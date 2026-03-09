@@ -21,7 +21,14 @@ export default function AdminAgenda() {
   }, []);
 
   return (
-    <AppShell title="Agenda" right={<Button onClick={() => router.push("/admin/events/new")}>+ Evento</Button>}>
+    <AppShell
+      title="Agenda"
+      right={
+        <Button onClick={() => router.push("/admin/events/new")} className="px-3 py-2 text-[13px]">
+          + Evento
+        </Button>
+      }
+    >
       {loading ? (
         <div className="text-[14px] text-[rgb(var(--muted))]">Cargando…</div>
       ) : (
@@ -29,7 +36,9 @@ export default function AdminAgenda() {
           {events.map((ev) => (
             <EventCard key={ev.id} event={ev} href={`/admin/events/${ev.id}`} />
           ))}
-          {!events.length && <div className="text-[14px] text-[rgb(var(--muted))]">No hay eventos.</div>}
+          {!events.length && (
+            <div className="text-[14px] text-[rgb(var(--muted))]">No hay eventos.</div>
+          )}
         </div>
       )}
     </AppShell>

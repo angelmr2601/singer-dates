@@ -13,14 +13,21 @@ export default function AppShell({
 }) {
   return (
     <div className="min-h-screen bg-[rgb(var(--bg))]">
-      <header className="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="text-[17px] font-extrabold tracking-tight">{title}</div>
-          <div className="flex items-center gap-2">{right}</div>
+      <header className="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 py-3 sm:px-4">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[16px] font-extrabold tracking-tight sm:text-[18px]">
+              {title}
+            </div>
+          </div>
+
+          {right ? <div className="shrink-0">{right}</div> : null}
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-4">{children}</main>
+      <main className="mx-auto max-w-5xl px-3 pb-28 pt-4 sm:px-4">
+        {children}
+      </main>
     </div>
   );
 }

@@ -134,8 +134,7 @@ export default function EditEventPage() {
     <AppShell title="Editar evento" right={<Button variant="ghost" onClick={() => router.back()}>Volver</Button>}>
       <Card>
         <form onSubmit={onSave} className="grid gap-4">
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Fecha</Label>
               <div className="mt-1">
@@ -158,7 +157,7 @@ export default function EditEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Precio</Label>
               <div className="mt-1">
@@ -183,32 +182,82 @@ export default function EditEventPage() {
             </div>
           </div>
 
-          <div>
-            <Label>Contacto</Label>
-            <div className="mt-1">
-              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Contacto</Label>
+              <div className="mt-1">
+                <Input value={contactName} onChange={(e) => setContactName(e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <Label>Teléfono</Label>
+              <div className="mt-1">
+                <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+              </div>
             </div>
           </div>
 
           <div>
-            <Label>Teléfono</Label>
+            <Label>Extra</Label>
             <div className="mt-1">
-              <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+              <Input value={contactExtra} onChange={(e) => setContactExtra(e.target.value)} />
             </div>
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Estado</Label>
+              <div className="mt-1">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 px-3 py-2"
+                >
+                  <option value="pending">Pendiente</option>
+                  <option value="confirmed">Confirmado</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="done">Realizado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-[14px] font-semibold">
+                <input
+                  type="checkbox"
+                  checked={paid}
+                  onChange={(e) => setPaid(e.target.checked)}
+                  className="h-4 w-4 rounded border-[rgb(var(--border))]"
+                />
+                Pagado
+              </label>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-[14px] font-semibold">
+            <input
+              type="checkbox"
+              checked={bringEquipment}
+              onChange={(e) => setBringEquipment(e.target.checked)}
+              className="h-4 w-4 rounded border-[rgb(var(--border))]"
+            />
+            Llevar equipo
+          </label>
 
           <div>
             <Label>Notas</Label>
             <textarea
               value={notesAdmin}
               onChange={(e) => setNotesAdmin(e.target.value)}
+              rows={4}
               className="w-full rounded-2xl border border-gray-200 px-3 py-2"
             />
           </div>
 
           {error && <div className="text-sm text-red-600">{error}</div>}
 
-          <Button disabled={saving}>
+          <Button disabled={saving} className="w-full sm:w-auto">
             {saving ? "Guardando…" : "Guardar cambios"}
           </Button>
         </form>

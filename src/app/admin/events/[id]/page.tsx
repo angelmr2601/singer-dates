@@ -149,15 +149,14 @@ export default function AdminEventDetailPage() {
   }
 
   return (
-    <AppShell
-      title="Evento"
-      right={<Button variant="ghost" onClick={() => router.back()}>Volver</Button>}
-    >
+    <AppShell title="Evento" right={<Button variant="ghost" onClick={() => router.back()}>Volver</Button>}>
       <div className="grid gap-4">
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[22px] font-extrabold tracking-tight">{event.place}</div>
+              <div className="break-words text-[20px] font-extrabold tracking-tight sm:text-[22px]">
+                {event.place}
+              </div>
               <div className="mt-1 text-[14px] text-[rgb(var(--muted))]">
                 {formatDate(event.datetimeStart)} · {formatTime(event.datetimeStart)}
               </div>
@@ -165,7 +164,7 @@ export default function AdminEventDetailPage() {
 
             {event.companion?.color ? (
               <div
-                className="mt-1 h-4 w-4 rounded-full"
+                className="mt-1 h-4 w-4 shrink-0 rounded-full"
                 style={{ background: event.companion.color }}
                 title={event.companion?.name ?? ""}
               />
@@ -183,36 +182,17 @@ export default function AdminEventDetailPage() {
 
         <Card>
           <div className="text-[15px] font-extrabold">Estado</div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Button
-              variant={event.status === "pending" ? "primary" : "ghost"}
-              onClick={() => updateStatus("pending")}
-              disabled={updatingStatus}
-            >
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button variant={event.status === "pending" ? "primary" : "ghost"} onClick={() => updateStatus("pending")} disabled={updatingStatus}>
               Pendiente
             </Button>
-
-            <Button
-              variant={event.status === "confirmed" ? "primary" : "ghost"}
-              onClick={() => updateStatus("confirmed")}
-              disabled={updatingStatus}
-            >
+            <Button variant={event.status === "confirmed" ? "primary" : "ghost"} onClick={() => updateStatus("confirmed")} disabled={updatingStatus}>
               Confirmado
             </Button>
-
-            <Button
-              variant={event.status === "cancelled" ? "primary" : "ghost"}
-              onClick={() => updateStatus("cancelled")}
-              disabled={updatingStatus}
-            >
+            <Button variant={event.status === "cancelled" ? "primary" : "ghost"} onClick={() => updateStatus("cancelled")} disabled={updatingStatus}>
               Cancelado
             </Button>
-
-            <Button
-              variant={event.status === "done" ? "primary" : "ghost"}
-              onClick={() => updateStatus("done")}
-              disabled={updatingStatus}
-            >
+            <Button variant={event.status === "done" ? "primary" : "ghost"} onClick={() => updateStatus("done")} disabled={updatingStatus}>
               Realizado
             </Button>
           </div>
@@ -221,19 +201,11 @@ export default function AdminEventDetailPage() {
         <Card>
           <div className="text-[15px] font-extrabold">Acciones rápidas</div>
 
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Button variant="ghost" onClick={callContact} disabled={!event.contactPhone}>
-              Llamar
-            </Button>
-            <Button variant="ghost" onClick={openWhatsApp}>
-              WhatsApp
-            </Button>
-            <Button variant="ghost" onClick={openMaps}>
-              Maps
-            </Button>
-            <Button variant="ghost" onClick={copySummary}>
-              Copiar
-            </Button>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button variant="ghost" onClick={callContact} disabled={!event.contactPhone}>Llamar</Button>
+            <Button variant="ghost" onClick={openWhatsApp}>WhatsApp</Button>
+            <Button variant="ghost" onClick={openMaps}>Maps</Button>
+            <Button variant="ghost" onClick={copySummary}>Copiar</Button>
           </div>
         </Card>
 
@@ -243,27 +215,27 @@ export default function AdminEventDetailPage() {
           <div className="mt-4 grid gap-3 text-[14px]">
             <div>
               <div className="font-bold text-[rgb(var(--muted))]">Contacto</div>
-              <div className="mt-1">{event.contactName || "—"}</div>
+              <div className="mt-1 break-words">{event.contactName || "—"}</div>
             </div>
 
             <div>
               <div className="font-bold text-[rgb(var(--muted))]">Teléfono</div>
-              <div className="mt-1">{event.contactPhone || "—"}</div>
+              <div className="mt-1 break-words">{event.contactPhone || "—"}</div>
             </div>
 
             <div>
               <div className="font-bold text-[rgb(var(--muted))]">Extra</div>
-              <div className="mt-1">{event.contactExtra || "—"}</div>
+              <div className="mt-1 break-words">{event.contactExtra || "—"}</div>
             </div>
 
             <div>
               <div className="font-bold text-[rgb(var(--muted))]">Notas</div>
-              <div className="mt-1 whitespace-pre-wrap">{event.notesAdmin || "—"}</div>
+              <div className="mt-1 whitespace-pre-wrap break-words">{event.notesAdmin || "—"}</div>
             </div>
           </div>
         </Card>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Button onClick={() => router.push(`/admin/events/${id}/edit`)}>
             Editar
           </Button>

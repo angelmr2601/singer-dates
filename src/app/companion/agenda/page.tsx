@@ -26,7 +26,9 @@ export default function CompanionAgenda() {
           {events.map((ev) => (
             <EventCard key={ev.id} event={ev} href={`/companion/events/${ev.id}`} />
           ))}
-          {!events.length && <div className="text-[14px] text-[rgb(var(--muted))]">No tienes eventos.</div>}
+          {!events.length && (
+            <div className="text-[14px] text-[rgb(var(--muted))]">No tienes eventos.</div>
+          )}
         </div>
       )}
     </AppShell>

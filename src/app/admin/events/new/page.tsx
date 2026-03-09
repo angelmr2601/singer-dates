@@ -13,6 +13,7 @@ function toLocalDateValue(d: Date) {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
 function toLocalTimeValue(d: Date) {
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
@@ -109,7 +110,7 @@ export default function NewEventPage() {
     <AppShell title="Nuevo evento" right={<Button variant="ghost" onClick={() => router.back()}>Volver</Button>}>
       <Card>
         <form onSubmit={onSave} className="grid gap-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Fecha</Label>
               <div className="mt-1">
@@ -131,7 +132,7 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Precio (€)</Label>
               <div className="mt-1">
@@ -157,7 +158,7 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Contacto (nombre)</Label>
               <div className="mt-1">
@@ -179,7 +180,7 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Estado</Label>
               <div className="mt-1">
@@ -225,7 +226,7 @@ export default function NewEventPage() {
               <textarea
                 value={notesAdmin}
                 onChange={(e) => setNotesAdmin(e.target.value)}
-                rows={3}
+                rows={4}
                 className="w-full rounded-2xl border border-[rgb(var(--border))] bg-white px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-black/10"
               />
             </div>
@@ -233,7 +234,9 @@ export default function NewEventPage() {
 
           {error && <div className="text-[13px] font-semibold text-red-600">{error}</div>}
 
-          <Button disabled={saving}>{saving ? "Guardando…" : "Guardar"}</Button>
+          <Button disabled={saving} className="w-full sm:w-auto">
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
         </form>
       </Card>
     </AppShell>

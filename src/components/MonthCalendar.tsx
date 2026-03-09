@@ -113,7 +113,7 @@ export default function MonthCalendar({
                 border: "1px solid #e3e3e3",
                 borderRadius: 12,
                 padding: 8,
-                minHeight: 86,
+                minHeight: 72,
                 background: inMonth ? "white" : "#fafafa",
                 opacity: inMonth ? 1 : 0.6,
               }}

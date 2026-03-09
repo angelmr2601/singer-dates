@@ -181,7 +181,7 @@ export default function AdminCompanionsPage() {
               />
             </div>
 
-            <Button>Crear acompañante</Button>
+            <Button className="w-full sm:w-auto">Crear acompañante</Button>
           </form>
         </Card>
 
@@ -191,10 +191,10 @@ export default function AdminCompanionsPage() {
             <div className="mt-2 text-[14px] text-[rgb(var(--muted))]">
               Usuario: <b>{tempPassUser}</b>
             </div>
-            <div className="mt-3 rounded-2xl border border-[rgb(var(--border))] bg-black px-4 py-3 text-[16px] font-extrabold tracking-wide text-white">
+            <div className="mt-3 break-all rounded-2xl border border-[rgb(var(--border))] bg-black px-4 py-3 text-[16px] font-extrabold tracking-wide text-white">
               {tempPass}
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <Button onClick={copyPassword}>Copiar</Button>
               <Button
                 variant="ghost"
@@ -220,7 +220,7 @@ export default function AdminCompanionsPage() {
             <Card key={c.id}>
               <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
                 <div className="grid gap-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div
                       className="h-3 w-3 rounded-full"
                       style={{ background: drafts[c.id]?.color ?? c.color ?? "#999999" }}
@@ -272,7 +272,7 @@ export default function AdminCompanionsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 md:justify-end">
+                <div className="flex flex-col gap-2 sm:flex-row md:flex-col md:items-stretch">
                   <Button
                     variant="ghost"
                     onClick={() => resetPassword(c.id, c.username)}
