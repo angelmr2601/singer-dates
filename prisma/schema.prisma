@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  admin
+  companion
+}
+
+enum EventStatus {
+  pending
+  confirmed
+  cancelled
+  done
+}
+
+model User {
+  id           String   @id @default(uuid())
+  role         UserRole
+  username     String   @unique
+  passwordHash String
+  name         String
+  color        String?
+  active       Boolean  @default(true)
+
+  companionEvents Event[] @relation("CompanionEvents")
+  createdEvents   Event[] @relation("CreatedEvents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([active])
+}
+
+model Event {
+  id            String   @id @default(uuid())
+  datetimeStart DateTime
+  place         String
+  price         Decimal? @db.Decimal(10, 2)
+  currency      String   @default("EUR")
+
+  contactName  String?
+  contactPhone String?
+  contactExtra String?
+
+  companionId String?
+  companion   User?   @relation("CompanionEvents", fields: [companionId], references: [id])
+
+  bringEquipment Boolean @default(false)
+
+  status EventStatus @default(pending)
+  paid   Boolean     @default(false)
+
+  notesAdmin     String?
+  notesCompanion String?
+
+  createdById String
+  createdBy   User   @relation("CreatedEvents", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([datetimeStart])
+  @@index([companionId])
+  @@index([status])
+}
