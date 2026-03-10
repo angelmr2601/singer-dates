@@ -9,7 +9,6 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [capsLockOn, setCapsLockOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const canSubmit = username.trim().length > 0 && password.length > 0;
@@ -50,7 +49,7 @@ export default function LoginPage() {
         </div>
 
         <Card>
-          <form onSubmit={onSubmit} className="grid gap-3" aria-busy={loading}>
+          <form onSubmit={onSubmit} className="grid gap-3" noValidate>
             <div>
               <Label>Usuario</Label>
               <div className="mt-1">
@@ -60,7 +59,6 @@ export default function LoginPage() {
                   autoComplete="username"
                   placeholder="Tu usuario"
                   required
-                  autoFocus
                 />
               </div>
             </div>
@@ -75,16 +73,14 @@ export default function LoginPage() {
                   onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                   autoComplete="current-password"
                   placeholder="••••••••"
-                  className="pr-20"
                   required
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-extrabold text-[rgb(var(--muted))] transition hover:text-[rgb(var(--text))] disabled:opacity-60"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-extrabold text-[rgb(var(--muted))] transition hover:text-[rgb(var(--text))]"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  disabled={loading}
                 >
                   {showPassword ? "Ocultar" : "Mostrar"}
                 </button>
