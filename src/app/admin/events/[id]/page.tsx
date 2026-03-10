@@ -58,7 +58,8 @@ export default function AdminEventDetailPage() {
       `📅 ${formatDate(event.datetimeStart)}`,
       `🕒 ${formatTime(event.datetimeStart)}`,
       `📍 ${event.place}`,
-      event.price ? `💶 ${event.price} ${event.currency}` : null,
+      event.price ? `💶 Total: ${event.price} ${event.currency}` : null,
+      event.companionPrice ? `🤝 Acompañante: ${event.companionPrice} ${event.currency}` : null,
       event.contactName ? `👤 ${event.contactName}` : null,
       event.contactPhone ? `📞 ${event.contactPhone}` : null,
       `🎛️ Equipo: ${event.bringEquipment ? "Sí" : "No"}`,
@@ -175,7 +176,8 @@ export default function AdminEventDetailPage() {
             <Badge>{event.status}</Badge>
             <Badge>{event.paid ? "Pagado" : "Pendiente"}</Badge>
             <Badge>{event.bringEquipment ? "Con equipo" : "Sin equipo"}</Badge>
-            {event.price ? <Badge>{event.price} {event.currency}</Badge> : null}
+            {event.price ? <Badge>Total: {event.price} {event.currency}</Badge> : null}
+            {event.companionPrice ? <Badge>Acompañante: {event.companionPrice} {event.currency}</Badge> : null}
             {event.companion?.name ? <Badge>{event.companion.name}</Badge> : <Badge>Sin acompañante</Badge>}
           </div>
         </Card>

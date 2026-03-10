@@ -24,7 +24,7 @@ export default function CompanionAgenda() {
       ) : (
         <div className="grid gap-3">
           {events.map((ev) => (
-            <EventCard key={ev.id} event={ev} href={`/companion/events/${ev.id}`} />
+            <EventCard key={ev.id} event={ev} href={`/companion/events/${ev.id}`} priceMode="companion" />
           ))}
           {!events.length && (
             <div className="text-[14px] text-[rgb(var(--muted))]">No tienes eventos.</div>

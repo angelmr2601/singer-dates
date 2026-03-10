@@ -56,6 +56,7 @@ export default function CompanionEventDetailPage() {
       `📅 ${formatDate(event.datetimeStart)}`,
       `🕒 ${formatTime(event.datetimeStart)}`,
       `📍 ${event.place}`,
+      event.companionPrice ? `💶 Cobro: ${event.companionPrice} ${event.currency}` : null,
       event.contactName ? `👤 ${event.contactName}` : null,
       event.contactPhone ? `📞 ${event.contactPhone}` : null,
       `🎛️ Equipo: ${event.bringEquipment ? "Sí" : "No"}`,
@@ -137,6 +138,11 @@ export default function CompanionEventDetailPage() {
           <div className="text-[15px] font-extrabold">Detalles</div>
 
           <div className="mt-4 grid gap-3 text-[14px]">
+            <div>
+              <div className="font-bold text-[rgb(var(--muted))]">Mi cobro</div>
+              <div className="mt-1 break-words">{event.companionPrice ? `${event.companionPrice} ${event.currency}` : "—"}</div>
+            </div>
+
             <div>
               <div className="font-bold text-[rgb(var(--muted))]">Contacto</div>
               <div className="mt-1 break-words">{event.contactName || "—"}</div>

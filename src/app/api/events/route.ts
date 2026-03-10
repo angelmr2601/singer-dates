@@ -6,7 +6,8 @@ import { z } from "zod";
 const createSchema = z.object({
   datetimeStart: z.string().datetime(), // ISO string
   place: z.string().min(2),
-  price: z.number().nonnegative().optional(),
+  price: z.number().nonnegative().nullable().optional(),
+  companionPrice: z.number().nonnegative().nullable().optional(),
   currency: z.string().min(3).max(3).default("EUR"),
 
   contactName: z.string().optional(),
@@ -64,7 +65,12 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json({ events });
+  const safeEvents =
+    me.role === "admin"
+      ? events
+      : events.map((event) => ({ ...event, price: null }));
+
+  return NextResponse.json({ events: safeEvents });
 }
 
 export async function POST(req: Request) {
@@ -103,6 +109,7 @@ export async function POST(req: Request) {
       place: data.place,
       price: data.price,
       currency: data.currency,
+      companionPrice: data.companionPrice ?? null,
 
       contactName: data.contactName,
       contactPhone: data.contactPhone,
