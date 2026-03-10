@@ -42,6 +42,7 @@ model Event {
   datetimeStart DateTime
   place         String
   price         Decimal? @db.Decimal(10, 2)
+  companionPrice Decimal? @db.Decimal(10, 2)
   currency      String   @default("EUR")
 
   contactName  String?

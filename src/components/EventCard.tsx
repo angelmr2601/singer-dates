@@ -20,10 +20,21 @@ function fmtTime(iso: string) {
   }).format(d);
 }
 
-export default function EventCard({ event, href }: { event: any; href: string }) {
+export default function EventCard({
+  event,
+  href,
+  priceMode = "total",
+}: {
+  event: any;
+  href: string;
+  priceMode?: "total" | "companion";
+}) {
   const color = event.companion?.color ?? "#9CA3AF";
-  const price =
-    event.price === null || event.price === undefined ? null : `${event.price} ${event.currency}`;
+  const amount =
+    priceMode === "companion"
+      ? event.companionPrice
+      : event.price;
+  const price = amount === null || amount === undefined ? null : `${amount} ${event.currency}`;
 
   return (
     <Link href={href} className="block">
@@ -51,7 +62,7 @@ export default function EventCard({ event, href }: { event: any; href: string })
               <Badge>{event.status}</Badge>
               <Badge>{event.paid ? "Pagado" : "Pendiente"}</Badge>
               {event.bringEquipment ? <Badge>Equipo</Badge> : null}
-              {price ? <Badge>{price}</Badge> : null}
+              {price ? <Badge>{priceMode === "companion" ? `Cobro: ${price}` : price}</Badge> : null}
             </div>
           </div>
         </div>

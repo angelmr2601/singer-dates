@@ -29,6 +29,7 @@ export default function NewEventPage() {
 
   const [place, setPlace] = useState("");
   const [price, setPrice] = useState<string>("");
+  const [companionPrice, setCompanionPrice] = useState<string>("");
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactExtra, setContactExtra] = useState("");
@@ -79,6 +80,7 @@ export default function NewEventPage() {
       contactExtra: contactExtra || null,
       companionId: companionId ? companionId : null,
       price: price === "" ? null : Number(price),
+      companionPrice: companionPrice === "" ? null : Number(companionPrice),
     };
 
     const res = await fetch("/api/events", {
@@ -134,9 +136,15 @@ export default function NewEventPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Precio (€)</Label>
+              <Label>Precio total evento (€)</Label>
               <div className="mt-1">
                 <Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Precio acompañante (€)</Label>
+              <div className="mt-1">
+                <Input inputMode="decimal" value={companionPrice} onChange={(e) => setCompanionPrice(e.target.value)} />
               </div>
             </div>
             <div>

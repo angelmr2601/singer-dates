@@ -33,6 +33,7 @@ export default function EditEventPage() {
   const [time, setTime] = useState("");
   const [place, setPlace] = useState("");
   const [price, setPrice] = useState<string>("");
+  const [companionPrice, setCompanionPrice] = useState<string>("");
 
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -62,6 +63,7 @@ export default function EditEventPage() {
 
       setPlace(ev.place ?? "");
       setPrice(ev.price ? String(ev.price) : "");
+      setCompanionPrice(ev.companionPrice ? String(ev.companionPrice) : "");
 
       setContactName(ev.contactName ?? "");
       setContactPhone(ev.contactPhone ?? "");
@@ -95,6 +97,7 @@ export default function EditEventPage() {
       datetimeStart: dt.toISOString(),
       place,
       price: price === "" ? null : Number(price),
+      companionPrice: companionPrice === "" ? null : Number(companionPrice),
       companionId: companionId || null,
       bringEquipment,
       status,
@@ -159,9 +162,16 @@ export default function EditEventPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Precio</Label>
+              <Label>Precio total evento (€)</Label>
               <div className="mt-1">
                 <Input value={price} onChange={(e) => setPrice(e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <Label>Precio acompañante (€)</Label>
+              <div className="mt-1">
+                <Input value={companionPrice} onChange={(e) => setCompanionPrice(e.target.value)} />
               </div>
             </div>
 

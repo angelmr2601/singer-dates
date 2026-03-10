@@ -8,6 +8,7 @@ const adminPatchSchema = z.object({
   datetimeStart: z.string().datetime().optional(),
   place: z.string().min(2).optional(),
   price: z.number().nonnegative().nullable().optional(),
+  companionPrice: z.number().nonnegative().nullable().optional(),
   currency: z.string().length(3).optional(),
   contactName: z.string().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
@@ -48,7 +49,9 @@ export async function GET(
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  return NextResponse.json({ event });
+  const safeEvent = me.role === "admin" ? event : { ...event, price: null };
+
+  return NextResponse.json({ event: safeEvent });
 }
 
 export async function PATCH(
