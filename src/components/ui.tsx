@@ -33,11 +33,11 @@ export function Button({
   );
 }
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full rounded-2xl border border-[rgb(var(--border))] bg-white px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-black/10"
+      className={`w-full rounded-2xl border border-[rgb(var(--border))] bg-white px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-black/10 ${className}`}
     />
   );
 }
@@ -46,9 +46,17 @@ export function Label({ children }: { children: ReactNode }) {
   return <div className="text-[12px] font-bold text-[rgb(var(--muted))]">{children}</div>;
 }
 
-export function Badge({ children }: { children: ReactNode }) {
+export function Badge({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <span className="rounded-full border border-[rgb(var(--border))] bg-black/5 px-2 py-1 text-[12px] font-semibold text-[rgb(var(--text))]">
+    <span
+      className={`rounded-full border border-[rgb(var(--border))] bg-black/5 px-2 py-1 text-[12px] font-semibold text-[rgb(var(--text))] ${className}`}
+    >
       {children}
     </span>
   );
