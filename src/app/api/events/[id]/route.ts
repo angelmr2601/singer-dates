@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/permissions";
+import { Prisma } from "@prisma/client";
+import { z } from "zod";
+
+const adminPatchSchema = z.object({
+  datetimeStart: z.string().datetime().optional(),
+  place: z.string().min(2).optional(),
+  price: z.number().nonnegative().nullable().optional(),
+  currency: z.string().length(3).optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactExtra: z.string().nullable().optional(),
+  companionId: z.string().uuid().nullable().optional(),
+  bringEquipment: z.boolean().optional(),
+  status: z.enum(["pending", "confirmed", "cancelled", "done"]).optional(),
+  paid: z.boolean().optional(),
+  notesAdmin: z.string().nullable().optional(),
+  notesCompanion: z.string().nullable().optional(),
+});
+
+const companionPatchSchema = z.object({
+  notesCompanion: z.string().nullable().optional(),
+});
 
 export async function GET(
   _req: Request,
@@ -45,7 +67,7 @@ export async function PATCH(
   }
 
   const raw = await req.text();
-  let body: any = null;
+  let body: unknown = null;
 
   try {
     body = raw ? JSON.parse(raw) : null;
@@ -54,31 +76,27 @@ export async function PATCH(
   }
 
   if (me.role === "admin") {
-    const data: any = {};
-
-    if (body.datetimeStart !== undefined) data.datetimeStart = new Date(body.datetimeStart);
-    if (body.place !== undefined) data.place = body.place;
-    if (body.price !== undefined) data.price = body.price;
-    if (body.currency !== undefined) data.currency = body.currency;
-
-    if (body.contactName !== undefined) data.contactName = body.contactName;
-    if (body.contactPhone !== undefined) data.contactPhone = body.contactPhone;
-    if (body.contactExtra !== undefined) data.contactExtra = body.contactExtra;
-
-    if (body.companionId !== undefined) data.companionId = body.companionId;
-    if (body.bringEquipment !== undefined) data.bringEquipment = body.bringEquipment;
-
-    if (body.status !== undefined) {
-      const allowed = ["pending", "confirmed", "cancelled", "done"];
-      if (!allowed.includes(body.status)) {
-        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-      }
-      data.status = body.status;
+    const parsed = adminPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    if (body.paid !== undefined) data.paid = body.paid;
-    if (body.notesAdmin !== undefined) data.notesAdmin = body.notesAdmin;
-    if (body.notesCompanion !== undefined) data.notesCompanion = body.notesCompanion;
+    const data: Prisma.EventUpdateInput = {
+      ...parsed.data,
+      ...(parsed.data.datetimeStart !== undefined
+        ? { datetimeStart: new Date(parsed.data.datetimeStart) }
+        : {}),
+    };
+
+    if (parsed.data.companionId) {
+      const companion = await prisma.user.findUnique({
+        where: { id: parsed.data.companionId },
+        select: { id: true, role: true, active: true },
+      });
+      if (!companion || companion.role !== "companion" || !companion.active) {
+        return NextResponse.json({ error: "Invalid companionId" }, { status: 400 });
+      }
+    }
 
     const updated = await prisma.event.update({
       where: { id },
@@ -97,9 +115,14 @@ export async function PATCH(
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  const allowedCompanionData: any = {};
-  if (body.notesCompanion !== undefined) {
-    allowedCompanionData.notesCompanion = body.notesCompanion;
+  const allowedCompanionData: Prisma.EventUpdateInput = {};
+  const parsed = companionPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid body", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  if (parsed.data.notesCompanion !== undefined) {
+    allowedCompanionData.notesCompanion = parsed.data.notesCompanion;
   }
 
   const updated = await prisma.event.update({
