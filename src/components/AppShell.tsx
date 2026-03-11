@@ -1,6 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui";
 
 export default function AppShell({
   title,
@@ -11,6 +13,20 @@ export default function AppShell({
   right?: ReactNode;
   children: ReactNode;
 }) {
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function onLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[rgb(var(--bg))]">
       <header className="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-white/90 backdrop-blur">
@@ -21,7 +37,12 @@ export default function AppShell({
             </div>
           </div>
 
-          {right ? <div className="shrink-0">{right}</div> : null}
+          <div className="shrink-0 flex items-center gap-2">
+            {right}
+            <Button variant="ghost" onClick={onLogout} disabled={loggingOut}>
+              {loggingOut ? "Saliendo…" : "Salir"}
+            </Button>
+          </div>
         </div>
       </header>
 
