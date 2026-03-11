@@ -68,6 +68,7 @@ export async function POST(req: Request) {
         color,
         passwordHash: await hashPassword(finalPassword),
         active: true,
+        mustChangePassword: Boolean(temp),
       },
       select: { id: true, name: true, username: true, color: true, active: true },
     });
