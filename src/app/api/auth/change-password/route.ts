@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/permissions";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { hasMustChangePasswordColumn } from "@/lib/db-compat";
 
 export async function POST(req: Request) {
   const me = await requireUser();
@@ -39,9 +40,13 @@ export async function POST(req: Request) {
   const ok = await verifyPassword(currentPassword, user.passwordHash);
   if (!ok) return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
 
+  const canWriteMustChangePassword = await hasMustChangePasswordColumn();
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+    data: canWriteMustChangePassword
+      ? { passwordHash: await hashPassword(newPassword), mustChangePassword: false }
+      : { passwordHash: await hashPassword(newPassword) },
   });
 
   return NextResponse.json({ ok: true });

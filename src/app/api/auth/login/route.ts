@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { hasMustChangePasswordColumn } from "@/lib/db-compat";
 import { getSession } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 
@@ -17,10 +18,17 @@ export async function POST(req: Request) {
 
     const { username, password } = parsed.data;
 
-    const user = await prisma.user.findUnique({
-      where: { username },
-      select: { id: true, role: true, active: true, passwordHash: true, mustChangePassword: true },
-    });
+    const canReadMustChangePassword = await hasMustChangePasswordColumn();
+
+    const user = canReadMustChangePassword
+      ? await prisma.user.findUnique({
+          where: { username },
+          select: { id: true, role: true, active: true, passwordHash: true, mustChangePassword: true },
+        })
+      : await prisma.user.findUnique({
+          where: { username },
+          select: { id: true, role: true, active: true, passwordHash: true },
+        });
     if (!user || !user.active) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     const ok = await verifyPassword(password, user.passwordHash);
@@ -41,7 +49,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       role: user.role,
-      mustChangePassword: user.role === "companion" ? user.mustChangePassword : false,
+      mustChangePassword:
+        user.role === "companion" && "mustChangePassword" in user ? user.mustChangePassword : false,
     });
   } catch (error) {
     console.error("Login error", error);
