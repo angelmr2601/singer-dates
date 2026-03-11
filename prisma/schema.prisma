@@ -28,7 +28,7 @@ model User {
   color        String?
   active       Boolean  @default(true)
 
-  companionEvents Event[] @relation("CompanionEvents")
+  companionEvents EventCompanion[]
   createdEvents   Event[] @relation("CreatedEvents")
 
   createdAt DateTime @default(now())
@@ -50,8 +50,7 @@ model Event {
   contactPhone String?
   contactExtra String?
 
-  companionId String?
-  companion   User?   @relation("CompanionEvents", fields: [companionId], references: [id])
+  companions EventCompanion[]
 
   bringEquipment Boolean @default(false)
 
@@ -68,6 +67,16 @@ model Event {
   updatedAt DateTime @updatedAt
 
   @@index([datetimeStart])
-  @@index([companionId])
   @@index([status])
+}
+
+model EventCompanion {
+  eventId     String
+  companionId String
+
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  companion User  @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, companionId])
+  @@index([companionId])
 }

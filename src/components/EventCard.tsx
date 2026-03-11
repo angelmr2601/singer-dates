@@ -29,12 +29,14 @@ export default function EventCard({
   href: string;
   priceMode?: "total" | "companion";
 }) {
-  const color = event.companion?.color ?? "#9CA3AF";
-  const amount =
-    priceMode === "companion"
-      ? event.companionPrice
-      : event.price;
+  const primaryCompanion = event.companions?.[0] ?? null;
+  const color = primaryCompanion?.color ?? "#9CA3AF";
+  const amount = priceMode === "companion" ? event.companionPrice : event.price;
   const price = amount === null || amount === undefined ? null : `${amount} ${event.currency}`;
+  const companionLabel =
+    event.companions?.length > 0
+      ? event.companions.map((companion: any) => companion.name).join(", ")
+      : "Sin acompañante";
 
   return (
     <Link href={href} className="block">
@@ -48,14 +50,10 @@ export default function EventCard({
                 <div className="text-[13px] font-extrabold text-[rgb(var(--muted))]">
                   {fmtDate(event.datetimeStart)} · {fmtTime(event.datetimeStart)}
                 </div>
-                <div className="mt-1 break-words text-[15px] font-extrabold">
-                  {event.place}
-                </div>
+                <div className="mt-1 break-words text-[15px] font-extrabold">{event.place}</div>
               </div>
 
-              <div className="text-[12px] font-semibold text-[rgb(var(--muted))] sm:text-right">
-                {event.companion?.name ?? "Sin acompañante"}
-              </div>
+              <div className="text-[12px] font-semibold text-[rgb(var(--muted))] sm:text-right">{companionLabel}</div>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">

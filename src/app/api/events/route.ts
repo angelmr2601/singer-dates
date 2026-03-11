@@ -14,7 +14,7 @@ const createSchema = z.object({
   contactPhone: z.string().optional(),
   contactExtra: z.string().optional(),
 
-  companionId: z.string().uuid().optional().nullable(),
+  companionIds: z.array(z.string().uuid()).optional().default([]),
   bringEquipment: z.boolean().default(false),
 
   status: z.enum(["pending", "confirmed", "cancelled", "done"]).default("pending"),
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
 
   const from = url.searchParams.get("from"); // ISO
-  const to = url.searchParams.get("to");     // ISO
+  const to = url.searchParams.get("to"); // ISO
   const status = url.searchParams.get("status");
   const paid = parseBool(url.searchParams.get("paid"));
   const companionId = url.searchParams.get("companionId"); // solo admin
@@ -51,24 +51,33 @@ export async function GET(req: Request) {
   if (paid !== null) where.paid = paid;
 
   if (me.role === "admin") {
-    if (companionId) where.companionId = companionId;
+    if (companionId) where.companions = { some: { companionId } };
   } else {
     // acompañante: forzado a ver solo lo suyo
-    where.companionId = me.id;
+    where.companions = { some: { companionId: me.id } };
   }
 
   const events = await prisma.event.findMany({
     where,
     orderBy: { datetimeStart: "asc" },
     include: {
-      companion: { select: { id: true, name: true, color: true } },
+      companions: {
+        include: {
+          companion: { select: { id: true, name: true, color: true } },
+        },
+      },
     },
   });
 
+  const normalizedEvents = events.map(({ companions, ...event }) => ({
+    ...event,
+    companions: companions.map((item) => item.companion),
+  }));
+
   const safeEvents =
     me.role === "admin"
-      ? events
-      : events.map((event) => ({ ...event, price: null }));
+      ? normalizedEvents
+      : normalizedEvents.map((event) => ({ ...event, price: null }));
 
   return NextResponse.json({ events: safeEvents });
 }
@@ -91,15 +100,16 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
+  const companionIds = [...new Set(data.companionIds)];
 
-  // Validación extra: si companionId viene, debe existir y ser companion y activo
-  if (data.companionId) {
-    const c = await prisma.user.findUnique({
-      where: { id: data.companionId },
-      select: { id: true, role: true, active: true },
+  if (companionIds.length > 0) {
+    const validCompanions = await prisma.user.findMany({
+      where: { id: { in: companionIds }, role: "companion", active: true },
+      select: { id: true },
     });
-    if (!c || c.role !== "companion" || !c.active) {
-      return NextResponse.json({ error: "Invalid companionId" }, { status: 400 });
+
+    if (validCompanions.length !== companionIds.length) {
+      return NextResponse.json({ error: "Invalid companionIds" }, { status: 400 });
     }
   }
 
@@ -115,7 +125,9 @@ export async function POST(req: Request) {
       contactPhone: data.contactPhone,
       contactExtra: data.contactExtra,
 
-      companionId: data.companionId ?? null,
+      companions: {
+        create: companionIds.map((companionId) => ({ companionId })),
+      },
       bringEquipment: data.bringEquipment,
 
       status: data.status,
@@ -125,9 +137,21 @@ export async function POST(req: Request) {
       createdById: me.id,
     },
     include: {
-      companion: { select: { id: true, name: true, color: true } },
+      companions: {
+        include: {
+          companion: { select: { id: true, name: true, color: true } },
+        },
+      },
     },
   });
 
-  return NextResponse.json({ event }, { status: 201 });
+  return NextResponse.json(
+    {
+      event: {
+        ...event,
+        companions: event.companions.map((item) => item.companion),
+      },
+    },
+    { status: 201 },
+  );
 }
