@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { Button, Card, Input, Label } from "@/components/ui";
 
-type Companion = { id: string; name: string; color: string | null; active: boolean };
+type Companion = { id: string; name: string; color: string | null; active: boolean; companionPrice?: number | null };
 
 function toLocalDateValue(d: Date) {
   const yyyy = d.getFullYear();
@@ -34,6 +34,7 @@ export default function EditEventPage() {
   const [place, setPlace] = useState("");
   const [price, setPrice] = useState<string>("");
   const [companionPrice, setCompanionPrice] = useState<string>("");
+  const [companionPrices, setCompanionPrices] = useState<Record<string, string>>({});
 
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -69,7 +70,11 @@ export default function EditEventPage() {
       setContactPhone(ev.contactPhone ?? "");
       setContactExtra(ev.contactExtra ?? "");
 
-      setCompanionIds((ev.companions ?? []).map((c: Companion) => c.id));
+      const selectedCompanions = ev.companions ?? [];
+      setCompanionIds(selectedCompanions.map((c: Companion) => c.id));
+      setCompanionPrices(
+        Object.fromEntries(selectedCompanions.map((c: Companion) => [c.id, c.companionPrice ? String(c.companionPrice) : ""])),
+      );
       setBringEquipment(!!ev.bringEquipment);
       setStatus(ev.status);
       setPaid(!!ev.paid);
@@ -99,6 +104,10 @@ export default function EditEventPage() {
       price: price === "" ? null : Number(price),
       companionPrice: companionPrice === "" ? null : Number(companionPrice),
       companionIds,
+      companionPricing: companionIds.map((companionId) => ({
+        companionId,
+        price: companionPrices[companionId] === "" ? null : Number(companionPrices[companionId]),
+      })),
       bringEquipment,
       status,
       paid,
@@ -169,7 +178,7 @@ export default function EditEventPage() {
             </div>
 
             <div>
-              <Label>Precio acompañante (€)</Label>
+              <Label>Precio base acompañante (€)</Label>
               <div className="mt-1">
                 <Input value={companionPrice} onChange={(e) => setCompanionPrice(e.target.value)} />
               </div>
@@ -188,10 +197,33 @@ export default function EditEventPage() {
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
-                <p className="mt-1 text-[12px] text-[rgb(var(--muted))]">Mantén Ctrl/Cmd para seleccionar varios.</p>
               </div>
             </div>
           </div>
+
+          {companionIds.length > 0 ? (
+            <div className="grid gap-3">
+              <Label>Precio por acompañante</Label>
+              {companionIds.map((companionId) => {
+                const companion = companions.find((c) => c.id === companionId);
+                return (
+                  <div key={companionId} className="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+                    <div className="text-[14px] font-semibold">{companion?.name ?? "Acompañante"}</div>
+                    <Input
+                      inputMode="decimal"
+                      value={companionPrices[companionId] ?? ""}
+                      onChange={(e) =>
+                        setCompanionPrices((prev) => ({
+                          ...prev,
+                          [companionId]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

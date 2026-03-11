@@ -4,13 +4,22 @@ import { requireUser } from "@/lib/auth/permissions";
 import { z } from "zod";
 
 const createSchema = z.object({
-  datetimeStart: z.string().datetime(), // ISO string
+  datetimeStart: z.string().datetime(),
   place: z.string().min(2),
-  price: z.number().nonnegative().nullable().optional(),
+  price: z.number().nonnegative(),
   companionPrice: z.number().nonnegative().nullable().optional(),
+  companionPricing: z
+    .array(
+      z.object({
+        companionId: z.string().uuid(),
+        price: z.number().nonnegative().nullable().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
   currency: z.string().min(3).max(3).default("EUR"),
 
-  contactName: z.string().optional(),
+  contactName: z.string().min(2),
   contactPhone: z.string().optional(),
   contactExtra: z.string().optional(),
 
@@ -30,15 +39,38 @@ function parseBool(v: string | null) {
   return null;
 }
 
+function normalizeEvent(event: any, me: { role: string; id: string }) {
+  const companionAssignments = (event.companions ?? []).map((item: any) => ({
+    ...item.companion,
+    companionPrice: item.companionPrice,
+  }));
+
+  if (me.role === "admin") {
+    return {
+      ...event,
+      companions: companionAssignments,
+    };
+  }
+
+  const ownAssignment = companionAssignments.find((item: any) => item.id === me.id);
+
+  return {
+    ...event,
+    price: null,
+    companionPrice: ownAssignment?.companionPrice ?? null,
+    companions: companionAssignments.map(({ companionPrice: _ignored, ...companion }: any) => companion),
+  };
+}
+
 export async function GET(req: Request) {
   const me = await requireUser();
   const url = new URL(req.url);
 
-  const from = url.searchParams.get("from"); // ISO
-  const to = url.searchParams.get("to"); // ISO
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
   const status = url.searchParams.get("status");
   const paid = parseBool(url.searchParams.get("paid"));
-  const companionId = url.searchParams.get("companionId"); // solo admin
+  const companionId = url.searchParams.get("companionId");
 
   const where: any = {};
 
@@ -53,7 +85,6 @@ export async function GET(req: Request) {
   if (me.role === "admin") {
     if (companionId) where.companions = { some: { companionId } };
   } else {
-    // acompañante: forzado a ver solo lo suyo
     where.companions = { some: { companionId: me.id } };
   }
 
@@ -69,17 +100,7 @@ export async function GET(req: Request) {
     },
   });
 
-  const normalizedEvents = events.map(({ companions, ...event }) => ({
-    ...event,
-    companions: companions.map((item) => item.companion),
-  }));
-
-  const safeEvents =
-    me.role === "admin"
-      ? normalizedEvents
-      : normalizedEvents.map((event) => ({ ...event, price: null }));
-
-  return NextResponse.json({ events: safeEvents });
+  return NextResponse.json({ events: events.map((event) => normalizeEvent(event, me)) });
 }
 
 export async function POST(req: Request) {
@@ -113,6 +134,12 @@ export async function POST(req: Request) {
     }
   }
 
+  const pricingMap = new Map(
+    data.companionPricing
+      .filter((item) => companionIds.includes(item.companionId))
+      .map((item) => [item.companionId, item.price ?? data.companionPrice ?? null]),
+  );
+
   const event = await prisma.event.create({
     data: {
       datetimeStart: new Date(data.datetimeStart),
@@ -126,7 +153,10 @@ export async function POST(req: Request) {
       contactExtra: data.contactExtra,
 
       companions: {
-        create: companionIds.map((companionId) => ({ companionId })),
+        create: companionIds.map((companionId) => ({
+          companionId,
+          companionPrice: pricingMap.get(companionId) ?? data.companionPrice ?? null,
+        })),
       },
       bringEquipment: data.bringEquipment,
 
@@ -147,10 +177,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json(
     {
-      event: {
-        ...event,
-        companions: event.companions.map((item) => item.companion),
-      },
+      event: normalizeEvent(event, me),
     },
     { status: 201 },
   );

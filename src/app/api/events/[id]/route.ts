@@ -9,6 +9,14 @@ const adminPatchSchema = z.object({
   place: z.string().min(2).optional(),
   price: z.number().nonnegative().nullable().optional(),
   companionPrice: z.number().nonnegative().nullable().optional(),
+  companionPricing: z
+    .array(
+      z.object({
+        companionId: z.string().uuid(),
+        price: z.number().nonnegative().nullable().optional(),
+      }),
+    )
+    .optional(),
   currency: z.string().length(3).optional(),
   contactName: z.string().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
@@ -25,10 +33,26 @@ const companionPatchSchema = z.object({
   notesCompanion: z.string().nullable().optional(),
 });
 
-function normalizeEvent(event: any) {
+function normalizeEvent(event: any, me: { role: string; id: string }) {
+  const companionAssignments = (event.companions ?? []).map((item: any) => ({
+    ...item.companion,
+    companionPrice: item.companionPrice,
+  }));
+
+  if (me.role === "admin") {
+    return {
+      ...event,
+      companions: companionAssignments,
+    };
+  }
+
+  const ownAssignment = companionAssignments.find((item: any) => item.id === me.id);
+
   return {
     ...event,
-    companions: event.companions.map((item: any) => item.companion),
+    price: null,
+    companionPrice: ownAssignment?.companionPrice ?? null,
+    companions: companionAssignments.map(({ companionPrice: _ignored, ...companion }: any) => companion),
   };
 }
 
@@ -58,10 +82,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  const normalizedEvent = normalizeEvent(event);
-  const safeEvent = me.role === "admin" ? normalizedEvent : { ...normalizedEvent, price: null };
-
-  return NextResponse.json({ event: safeEvent });
+  return NextResponse.json({ event: normalizeEvent(event, me) });
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -92,26 +113,42 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       return NextResponse.json({ error: "Invalid body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    let companionNestedUpdate: Prisma.EventUpdateInput["companions"] | undefined;
-    if (parsed.data.companionIds !== undefined) {
-      const companionIds = [...new Set(parsed.data.companionIds)];
-      if (companionIds.length > 0) {
-        const companions = await prisma.user.findMany({
-          where: { id: { in: companionIds }, role: "companion", active: true },
-          select: { id: true },
-        });
-        if (companions.length !== companionIds.length) {
-          return NextResponse.json({ error: "Invalid companionIds" }, { status: 400 });
-        }
-      }
+    const nextCompanionIds = parsed.data.companionIds
+      ? [...new Set(parsed.data.companionIds)]
+      : existing.companions.map((item) => item.companionId);
 
+    if (parsed.data.companionIds && nextCompanionIds.length > 0) {
+      const companions = await prisma.user.findMany({
+        where: { id: { in: nextCompanionIds }, role: "companion", active: true },
+        select: { id: true },
+      });
+      if (companions.length !== nextCompanionIds.length) {
+        return NextResponse.json({ error: "Invalid companionIds" }, { status: 400 });
+      }
+    }
+
+    const pricingMap = new Map(
+      (parsed.data.companionPricing ?? [])
+        .filter((item) => nextCompanionIds.includes(item.companionId))
+        .map((item) => [item.companionId, item.price]),
+    );
+
+    const fallbackCompanionPrice =
+      parsed.data.companionPrice !== undefined ? parsed.data.companionPrice : existing.companionPrice;
+    const existingPrices = new Map(existing.companions.map((item) => [item.companionId, item.companionPrice]));
+
+    let companionNestedUpdate: Prisma.EventUpdateInput["companions"] | undefined;
+    if (parsed.data.companionIds !== undefined || parsed.data.companionPricing !== undefined) {
       companionNestedUpdate = {
         deleteMany: {},
-        create: companionIds.map((companionId) => ({ companionId })),
+        create: nextCompanionIds.map((companionId) => ({
+          companionId,
+          companionPrice: pricingMap.get(companionId) ?? existingPrices.get(companionId) ?? fallbackCompanionPrice ?? null,
+        })),
       };
     }
 
-    const { companionIds: _ignoredCompanionIds, ...baseData } = parsed.data;
+    const { companionIds: _ignoredCompanionIds, companionPricing: _ignoredPricing, ...baseData } = parsed.data;
     const data: Prisma.EventUpdateInput = {
       ...baseData,
       ...(parsed.data.datetimeStart !== undefined
@@ -134,7 +171,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       },
     });
 
-    return NextResponse.json({ event: normalizeEvent(updated) });
+    return NextResponse.json({ event: normalizeEvent(updated, me) });
   }
 
   const isAssigned = existing.companions.some((item) => item.companionId === me.id);
@@ -166,7 +203,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     },
   });
 
-  return NextResponse.json({ event: normalizeEvent(updated) });
+  return NextResponse.json({ event: normalizeEvent(updated, me) });
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
