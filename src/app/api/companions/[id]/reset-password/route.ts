@@ -34,6 +34,7 @@ export async function POST(
     where: { id },
     data: {
       passwordHash: await hashPassword(tempPassword),
+      mustChangePassword: true,
     },
   });
 

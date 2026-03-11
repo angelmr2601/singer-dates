@@ -23,6 +23,7 @@ model User {
   role         UserRole
   username     String   @unique
   passwordHash String
+  mustChangePassword Boolean @default(false)
   name         String
   color        String?
   active       Boolean  @default(true)

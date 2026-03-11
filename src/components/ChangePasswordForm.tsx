@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, Input, Label } from "@/components/ui";
 
-export default function ChangePasswordForm() {
+export default function ChangePasswordForm({ forcePassword = false }: { forcePassword?: boolean }) {
+  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,12 +40,16 @@ export default function ChangePasswordForm() {
     setNewPassword("");
     setConfirmPassword("");
     setMsg("Contraseña cambiada ✅");
+
+    if (forcePassword) {
+      router.replace("/companion/agenda");
+    }
   }
 
   return (
     <Card>
       <form onSubmit={onSubmit} className="grid gap-3">
-        <div className="text-[15px] font-extrabold">Cambiar contraseña</div>
+        <div className="text-[15px] font-extrabold">{forcePassword ? "Crea tu nueva contraseña" : "Cambiar contraseña"}</div>
 
         <div>
           <Label>Contraseña actual</Label>

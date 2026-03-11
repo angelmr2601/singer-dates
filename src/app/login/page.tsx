@@ -33,7 +33,12 @@ export default function LoginPage() {
     }
 
     const data = await res.json().catch(() => null);
-    router.replace(data?.role === "admin" ? "/admin/agenda" : "/companion/agenda");
+    if (data?.role === "admin") {
+      router.replace("/admin/agenda");
+      return;
+    }
+
+    router.replace(data?.mustChangePassword ? "/companion/settings?forcePassword=1" : "/companion/agenda");
   }
 
   return (
