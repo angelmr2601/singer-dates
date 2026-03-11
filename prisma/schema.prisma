@@ -73,6 +73,7 @@ model Event {
 model EventCompanion {
   eventId     String
   companionId String
+  companionPrice Decimal? @db.Decimal(10, 2)
 
   event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   companion User  @relation(fields: [companionId], references: [id], onDelete: Cascade)

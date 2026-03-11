@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import { Button, Card, Input, Label } from "@/components/ui";
 
 type Companion = { id: string; name: string; color: string | null; active: boolean };
+type FieldErrors = Partial<Record<"place" | "price" | "contactName", string>>;
 
 function toLocalDateValue(d: Date) {
   const yyyy = d.getFullYear();
@@ -20,6 +21,14 @@ function toLocalTimeValue(d: Date) {
   return `${hh}:${mm}`;
 }
 
+function isValidNumber(value: string) {
+  return value.trim() !== "" && !Number.isNaN(Number(value)) && Number(value) >= 0;
+}
+
+function fieldInputClass(hasError: boolean) {
+  return hasError ? "border-red-500 ring-2 ring-red-100 focus:ring-red-200" : "";
+}
+
 export default function NewEventPage() {
   const router = useRouter();
 
@@ -29,12 +38,12 @@ export default function NewEventPage() {
 
   const [place, setPlace] = useState("");
   const [price, setPrice] = useState<string>("");
-  const [companionPrice, setCompanionPrice] = useState<string>("");
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactExtra, setContactExtra] = useState("");
 
   const [companionIds, setCompanionIds] = useState<string[]>([]);
+  const [companionPrices, setCompanionPrices] = useState<Record<string, string>>({});
   const [bringEquipment, setBringEquipment] = useState(false);
   const [status, setStatus] = useState<"pending" | "confirmed" | "cancelled" | "done">("pending");
   const [paid, setPaid] = useState(false);
@@ -44,6 +53,7 @@ export default function NewEventPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     (async () => {
@@ -61,26 +71,52 @@ export default function NewEventPage() {
     })();
   }, [router]);
 
+  function validateForm() {
+    const nextErrors: FieldErrors = {};
+
+    if (place.trim().length < 2) nextErrors.place = "El sitio es obligatorio (mínimo 2 caracteres).";
+    if (!isValidNumber(price)) nextErrors.price = "El precio total es obligatorio y debe ser válido.";
+    if (contactName.trim().length < 2) nextErrors.contactName = "El nombre del contacto es obligatorio.";
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function handleCompanionSelection(nextIds: string[]) {
+    setCompanionIds(nextIds);
+    setCompanionPrices((prev) => {
+      const next: Record<string, string> = {};
+      for (const id of nextIds) next[id] = prev[id] ?? "";
+      return next;
+    });
+  }
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!validateForm()) return;
+
     setSaving(true);
 
     const dt = new Date(`${date}T${time}:00`);
     const payload: any = {
       datetimeStart: dt.toISOString(),
-      place,
+      place: place.trim(),
       bringEquipment,
       status,
       paid,
       currency: "EUR",
       notesAdmin: notesAdmin || null,
-      contactName: contactName || null,
+      contactName: contactName.trim(),
       contactPhone: contactPhone || null,
       contactExtra: contactExtra || null,
       companionIds,
-      price: price === "" ? null : Number(price),
-      companionPrice: companionPrice === "" ? null : Number(companionPrice),
+      price: Number(price),
+      companionPricing: companionIds.map((companionId) => ({
+        companionId,
+        price: isValidNumber(companionPrices[companionId] ?? "") ? Number(companionPrices[companionId]) : null,
+      })),
     };
 
     const res = await fetch("/api/events", {
@@ -111,7 +147,11 @@ export default function NewEventPage() {
   return (
     <AppShell title="Nuevo evento" right={<Button variant="ghost" onClick={() => router.back()}>Volver</Button>}>
       <Card>
-        <form onSubmit={onSave} className="grid gap-4">
+        <form onSubmit={onSave} className="grid gap-4" noValidate>
+          <div className="rounded-2xl border border-[rgb(var(--border))] bg-black/5 p-3 text-[12px] text-[rgb(var(--muted))]">
+            Los campos con <span className="font-bold text-red-600">*</span> son obligatorios.
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Fecha</Label>
@@ -128,32 +168,43 @@ export default function NewEventPage() {
           </div>
 
           <div>
-            <Label>Sitio</Label>
+            <Label>
+              Sitio <span className="text-red-600">*</span>
+            </Label>
             <div className="mt-1">
-              <Input value={place} onChange={(e) => setPlace(e.target.value)} required />
+              <Input
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+                aria-invalid={!!fieldErrors.place}
+                className={fieldInputClass(!!fieldErrors.place)}
+              />
             </div>
+            {fieldErrors.place ? <p className="mt-1 text-[12px] font-semibold text-red-600">{fieldErrors.place}</p> : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Precio total evento (€)</Label>
+              <Label>
+                Precio total evento (€) <span className="text-red-600">*</span>
+              </Label>
               <div className="mt-1">
-                <Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+                <Input
+                  inputMode="decimal"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  aria-invalid={!!fieldErrors.price}
+                  className={fieldInputClass(!!fieldErrors.price)}
+                />
               </div>
+              {fieldErrors.price ? <p className="mt-1 text-[12px] font-semibold text-red-600">{fieldErrors.price}</p> : null}
             </div>
-            <div>
-              <Label>Precio acompañante (€)</Label>
-              <div className="mt-1">
-                <Input inputMode="decimal" value={companionPrice} onChange={(e) => setCompanionPrice(e.target.value)} />
-              </div>
-            </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-1">
               <Label>Acompañantes</Label>
               <div className="mt-1">
                 <select
                   multiple
                   value={companionIds}
-                  onChange={(e) => setCompanionIds(Array.from(e.target.selectedOptions, (option) => option.value))}
+                  onChange={(e) => handleCompanionSelection(Array.from(e.target.selectedOptions, (option) => option.value))}
                   className="h-40 w-full rounded-2xl border border-[rgb(var(--border))] bg-white px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-black/10"
                 >
                   {companions.map((c) => (
@@ -167,12 +218,47 @@ export default function NewEventPage() {
             </div>
           </div>
 
+          {companionIds.length > 0 ? (
+            <div className="grid gap-3">
+              <Label>Precio por acompañante (visible solo para cada acompañante)</Label>
+              {companionIds.map((companionId) => {
+                const companion = companions.find((c) => c.id === companionId);
+                return (
+                  <div key={companionId} className="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+                    <div className="text-[14px] font-semibold">{companion?.name ?? "Acompañante"}</div>
+                    <Input
+                      inputMode="decimal"
+                      placeholder="Ej: 80"
+                      value={companionPrices[companionId] ?? ""}
+                      onChange={(e) =>
+                        setCompanionPrices((prev) => ({
+                          ...prev,
+                          [companionId]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Contacto (nombre)</Label>
+              <Label>
+                Contacto (nombre) <span className="text-red-600">*</span>
+              </Label>
               <div className="mt-1">
-                <Input value={contactName} onChange={(e) => setContactName(e.target.value)} />
+                <Input
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  aria-invalid={!!fieldErrors.contactName}
+                  className={fieldInputClass(!!fieldErrors.contactName)}
+                />
               </div>
+              {fieldErrors.contactName ? (
+                <p className="mt-1 text-[12px] font-semibold text-red-600">{fieldErrors.contactName}</p>
+              ) : null}
             </div>
             <div>
               <Label>Contacto (tel)</Label>
