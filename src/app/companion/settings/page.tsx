@@ -1,11 +1,12 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 
-export default function CompanionSettingsPage() {
-  const searchParams = useSearchParams();
-  const forcePassword = searchParams.get("forcePassword") === "1";
+type CompanionSettingsPageProps = {
+  searchParams?: Promise<{ forcePassword?: string }>;
+};
+
+export default async function CompanionSettingsPage({ searchParams }: CompanionSettingsPageProps) {
+  const params = await searchParams;
+  const forcePassword = params?.forcePassword === "1";
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
