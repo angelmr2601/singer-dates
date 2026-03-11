@@ -39,7 +39,7 @@ export default function EditEventPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactExtra, setContactExtra] = useState("");
 
-  const [companionId, setCompanionId] = useState("");
+  const [companionIds, setCompanionIds] = useState<string[]>([]);
   const [bringEquipment, setBringEquipment] = useState(false);
   const [status, setStatus] = useState("pending");
   const [paid, setPaid] = useState(false);
@@ -69,7 +69,7 @@ export default function EditEventPage() {
       setContactPhone(ev.contactPhone ?? "");
       setContactExtra(ev.contactExtra ?? "");
 
-      setCompanionId(ev.companionId ?? "");
+      setCompanionIds((ev.companions ?? []).map((c: Companion) => c.id));
       setBringEquipment(!!ev.bringEquipment);
       setStatus(ev.status);
       setPaid(!!ev.paid);
@@ -98,7 +98,7 @@ export default function EditEventPage() {
       place,
       price: price === "" ? null : Number(price),
       companionPrice: companionPrice === "" ? null : Number(companionPrice),
-      companionId: companionId || null,
+      companionIds,
       bringEquipment,
       status,
       paid,
@@ -175,19 +175,20 @@ export default function EditEventPage() {
               </div>
             </div>
 
-            <div>
-              <Label>Acompañante</Label>
+            <div className="sm:col-span-2">
+              <Label>Acompañantes</Label>
               <div className="mt-1">
                 <select
-                  value={companionId}
-                  onChange={(e) => setCompanionId(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 px-3 py-2"
+                  multiple
+                  value={companionIds}
+                  onChange={(e) => setCompanionIds(Array.from(e.target.selectedOptions, (option) => option.value))}
+                  className="h-40 w-full rounded-2xl border border-gray-200 px-3 py-2"
                 >
-                  <option value="">Sin acompañante</option>
                   {companions.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                <p className="mt-1 text-[12px] text-[rgb(var(--muted))]">Mantén Ctrl/Cmd para seleccionar varios.</p>
               </div>
             </div>
           </div>

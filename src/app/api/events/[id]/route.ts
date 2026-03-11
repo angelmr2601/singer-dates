@@ -13,7 +13,7 @@ const adminPatchSchema = z.object({
   contactName: z.string().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
   contactExtra: z.string().nullable().optional(),
-  companionId: z.string().uuid().nullable().optional(),
+  companionIds: z.array(z.string().uuid()).optional(),
   bringEquipment: z.boolean().optional(),
   status: z.enum(["pending", "confirmed", "cancelled", "done"]).optional(),
   paid: z.boolean().optional(),
@@ -25,18 +25,26 @@ const companionPatchSchema = z.object({
   notesCompanion: z.string().nullable().optional(),
 });
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+function normalizeEvent(event: any) {
+  return {
+    ...event,
+    companions: event.companions.map((item: any) => item.companion),
+  };
+}
+
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const me = await requireUser();
   const { id } = await ctx.params;
 
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
-      companion: {
-        select: { id: true, name: true, color: true },
+      companions: {
+        include: {
+          companion: {
+            select: { id: true, name: true, color: true },
+          },
+        },
       },
     },
   });
@@ -45,24 +53,24 @@ export async function GET(
     return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   }
 
-  if (me.role !== "admin" && event.companionId !== me.id) {
+  const isAssigned = event.companions.some((item) => item.companionId === me.id);
+  if (me.role !== "admin" && !isAssigned) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  const safeEvent = me.role === "admin" ? event : { ...event, price: null };
+  const normalizedEvent = normalizeEvent(event);
+  const safeEvent = me.role === "admin" ? normalizedEvent : { ...normalizedEvent, price: null };
 
   return NextResponse.json({ event: safeEvent });
 }
 
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const me = await requireUser();
   const { id } = await ctx.params;
 
   const existing = await prisma.event.findUnique({
     where: { id },
+    include: { companions: true },
   });
 
   if (!existing) {
@@ -84,37 +92,53 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid body", issues: parsed.error.issues }, { status: 400 });
     }
 
+    let companionNestedUpdate: Prisma.EventUpdateInput["companions"] | undefined;
+    if (parsed.data.companionIds !== undefined) {
+      const companionIds = [...new Set(parsed.data.companionIds)];
+      if (companionIds.length > 0) {
+        const companions = await prisma.user.findMany({
+          where: { id: { in: companionIds }, role: "companion", active: true },
+          select: { id: true },
+        });
+        if (companions.length !== companionIds.length) {
+          return NextResponse.json({ error: "Invalid companionIds" }, { status: 400 });
+        }
+      }
+
+      companionNestedUpdate = {
+        deleteMany: {},
+        create: companionIds.map((companionId) => ({ companionId })),
+      };
+    }
+
+    const { companionIds: _ignoredCompanionIds, ...baseData } = parsed.data;
     const data: Prisma.EventUpdateInput = {
-      ...parsed.data,
+      ...baseData,
       ...(parsed.data.datetimeStart !== undefined
         ? { datetimeStart: new Date(parsed.data.datetimeStart) }
         : {}),
+      ...(companionNestedUpdate ? { companions: companionNestedUpdate } : {}),
     };
-
-    if (parsed.data.companionId) {
-      const companion = await prisma.user.findUnique({
-        where: { id: parsed.data.companionId },
-        select: { id: true, role: true, active: true },
-      });
-      if (!companion || companion.role !== "companion" || !companion.active) {
-        return NextResponse.json({ error: "Invalid companionId" }, { status: 400 });
-      }
-    }
 
     const updated = await prisma.event.update({
       where: { id },
       data,
       include: {
-        companion: {
-          select: { id: true, name: true, color: true },
+        companions: {
+          include: {
+            companion: {
+              select: { id: true, name: true, color: true },
+            },
+          },
         },
       },
     });
 
-    return NextResponse.json({ event: updated });
+    return NextResponse.json({ event: normalizeEvent(updated) });
   }
 
-  if (existing.companionId !== me.id) {
+  const isAssigned = existing.companions.some((item) => item.companionId === me.id);
+  if (!isAssigned) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
@@ -132,19 +156,20 @@ export async function PATCH(
     where: { id },
     data: allowedCompanionData,
     include: {
-      companion: {
-        select: { id: true, name: true, color: true },
+      companions: {
+        include: {
+          companion: {
+            select: { id: true, name: true, color: true },
+          },
+        },
       },
     },
   });
 
-  return NextResponse.json({ event: updated });
+  return NextResponse.json({ event: normalizeEvent(updated) });
 }
 
-export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const me = await requireUser();
   if (me.role !== "admin") {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });

@@ -10,7 +10,7 @@ type CalEvent = {
   status: string;
   paid: boolean;
   bringEquipment: boolean;
-  companion?: { id: string; name: string; color: string | null } | null;
+  companions?: { id: string; name: string; color: string | null }[];
 };
 
 function startOfMonth(d: Date) {
@@ -172,7 +172,7 @@ export default function MonthCalendar({
                   <span
                     key={ev.id}
                     className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: ev.companion?.color ?? "#9CA3AF" }}
+                    style={{ background: ev.companions?.[0]?.color ?? "#9CA3AF" }}
                   />
                 ))}
                 {dayEvents.length > 3 ? (
@@ -208,7 +208,7 @@ export default function MonthCalendar({
                   <div className="flex items-start gap-3">
                     <div
                       className="mt-1 h-3 w-3 shrink-0 rounded-full"
-                      style={{ background: ev.companion?.color ?? "#9CA3AF" }}
+                      style={{ background: ev.companions?.[0]?.color ?? "#9CA3AF" }}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="text-[12px] font-extrabold text-[rgb(var(--muted))]">
@@ -218,7 +218,7 @@ export default function MonthCalendar({
                         {ev.place}
                       </div>
                       <div className="mt-1 text-[12px] text-[rgb(var(--muted))]">
-                        {ev.companion?.name ?? "Sin acompañante"}
+                        {ev.companions?.length ? ev.companions.map((c) => c.name).join(", ") : "Sin acompañante"}
                       </div>
                     </div>
                   </div>
@@ -264,7 +264,7 @@ export default function MonthCalendar({
                     href={`${linkBasePath}/${ev.id}`}
                     className="block rounded-xl bg-[rgb(var(--bg))] px-2 py-1.5 text-[11px] transition hover:bg-black/5"
                     style={{
-                      borderLeft: `5px solid ${ev.companion?.color ?? "#9CA3AF"}`,
+                      borderLeft: `5px solid ${ev.companions?.[0]?.color ?? "#9CA3AF"}`,
                     }}
                   >
                     <div className="font-extrabold">{fmtTime(ev.datetimeStart)}</div>

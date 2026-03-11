@@ -63,7 +63,7 @@ export default function AdminEventDetailPage() {
       event.contactName ? `👤 ${event.contactName}` : null,
       event.contactPhone ? `📞 ${event.contactPhone}` : null,
       `🎛️ Equipo: ${event.bringEquipment ? "Sí" : "No"}`,
-      event.companion?.name ? `🤝 ${event.companion.name}` : null,
+      event.companions?.length ? `🤝 ${event.companions.map((c: any) => c.name).join(", ")}` : null,
       event.notesAdmin ? `📝 ${event.notesAdmin}` : null,
     ].filter(Boolean);
 
@@ -163,11 +163,11 @@ export default function AdminEventDetailPage() {
               </div>
             </div>
 
-            {event.companion?.color ? (
+            {event.companions?.[0]?.color ? (
               <div
                 className="mt-1 h-4 w-4 shrink-0 rounded-full"
-                style={{ background: event.companion.color }}
-                title={event.companion?.name ?? ""}
+                style={{ background: event.companions[0].color }}
+                title={event.companions?.map((c: any) => c.name).join(", ") ?? ""}
               />
             ) : null}
           </div>
@@ -178,7 +178,7 @@ export default function AdminEventDetailPage() {
             <Badge>{event.bringEquipment ? "Con equipo" : "Sin equipo"}</Badge>
             {event.price ? <Badge>Total: {event.price} {event.currency}</Badge> : null}
             {event.companionPrice ? <Badge>Acompañante: {event.companionPrice} {event.currency}</Badge> : null}
-            {event.companion?.name ? <Badge>{event.companion.name}</Badge> : <Badge>Sin acompañante</Badge>}
+            {event.companions?.length ? <Badge>{event.companions.map((c: any) => c.name).join(", ")}</Badge> : <Badge>Sin acompañante</Badge>}
           </div>
         </Card>
 
