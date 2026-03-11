@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment variables
+
+Create a `.env` file (or project/env vars in Vercel) with at least:
+
+```bash
+DATABASE_URL="postgres://..."
+SESSION_PASSWORD="a-long-random-secret-with-at-least-32-characters"
+```
+
+> `SESSION_PASSWORD` is required for login sessions. If it is missing, `/api/auth/login` now returns `503` with a clear configuration error.
+
 ## Getting Started
 
 First, run the development server:
@@ -31,6 +42,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
