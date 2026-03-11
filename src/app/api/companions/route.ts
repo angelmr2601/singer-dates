@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/permissions";
 import { z } from "zod";
 import { hashPassword } from "@/lib/auth/password";
+import { hasMustChangePasswordColumn } from "@/lib/db-compat";
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -60,6 +61,8 @@ export async function POST(req: Request) {
   }
 
   try {
+    const canWriteMustChangePassword = await hasMustChangePasswordColumn();
+
     const user = await prisma.user.create({
       data: {
         role: "companion",
@@ -68,7 +71,7 @@ export async function POST(req: Request) {
         color,
         passwordHash: await hashPassword(finalPassword),
         active: true,
-        mustChangePassword: Boolean(temp),
+        ...(canWriteMustChangePassword ? { mustChangePassword: Boolean(temp) } : {}),
       },
       select: { id: true, name: true, username: true, color: true, active: true },
     });
