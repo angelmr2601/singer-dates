@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getEventStatusLabel } from "@/lib/event-status";
 
 function fmt(iso: string) {
   const d = new Date(iso);
@@ -60,7 +61,7 @@ export default function CompanionEventDetail() {
         </div>
         <div style={{ marginTop: 10 }}><b>Sitio:</b> {event.place}</div>
         <div style={{ marginTop: 6 }}><b>Equipo:</b> {event.bringEquipment ? "Sí" : "No"}</div>
-        <div style={{ marginTop: 6 }}><b>Estado:</b> {event.status}</div>
+        <div style={{ marginTop: 6 }}><b>Estado:</b> {getEventStatusLabel(event.status)}</div>
 
         {(event.contactName || event.contactPhone || event.contactExtra) && (
           <div style={{ marginTop: 12 }}>

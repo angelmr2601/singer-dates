@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui";
+import { getEventStatusLabel } from "@/lib/event-status";
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -57,8 +58,7 @@ export default function EventCard({
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Badge>{event.status}</Badge>
-              <Badge>{event.paid ? "Pagado" : "Pendiente"}</Badge>
+              <Badge>{getEventStatusLabel(event.status)}</Badge>
               {event.bringEquipment ? <Badge>Equipo</Badge> : null}
               {price ? <Badge>{priceMode === "companion" ? `Cobro: ${price}` : price}</Badge> : null}
             </div>

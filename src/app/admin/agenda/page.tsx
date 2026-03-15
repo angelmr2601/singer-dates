@@ -20,6 +20,12 @@ export default function AdminAgenda() {
     })();
   }, []);
 
+  const now = new Date();
+  const visibleEvents = events.filter((event) => {
+    if (event.status === "done") return false;
+    return new Date(event.datetimeStart) >= now;
+  });
+
   return (
     <AppShell
       title="Agenda"
@@ -33,10 +39,10 @@ export default function AdminAgenda() {
         <div className="text-[14px] text-[rgb(var(--muted))]">Cargando…</div>
       ) : (
         <div className="grid gap-3">
-          {events.map((ev) => (
+          {visibleEvents.map((ev) => (
             <EventCard key={ev.id} event={ev} href={`/admin/events/${ev.id}`} />
           ))}
-          {!events.length && (
+          {!visibleEvents.length && (
             <div className="text-[14px] text-[rgb(var(--muted))]">No hay eventos.</div>
           )}
         </div>
