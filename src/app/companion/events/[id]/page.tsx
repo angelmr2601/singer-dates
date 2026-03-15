@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { Badge, Button, Card } from "@/components/ui";
+import { getEventStatusLabel } from "@/lib/event-status";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -118,7 +119,7 @@ export default function CompanionEventDetailPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <Badge>{event.status}</Badge>
+            <Badge>{getEventStatusLabel(event.status)}</Badge>
             <Badge>{event.bringEquipment ? "Con equipo" : "Sin equipo"}</Badge>
           </div>
         </Card>

@@ -17,16 +17,22 @@ export default function CompanionAgenda() {
     })();
   }, []);
 
+  const now = new Date();
+  const visibleEvents = events.filter((event) => {
+    if (event.status === "done") return false;
+    return new Date(event.datetimeStart) >= now;
+  });
+
   return (
     <AppShell title="Mi agenda">
       {loading ? (
         <div className="text-[14px] text-[rgb(var(--muted))]">Cargando…</div>
       ) : (
         <div className="grid gap-3">
-          {events.map((ev) => (
+          {visibleEvents.map((ev) => (
             <EventCard key={ev.id} event={ev} href={`/companion/events/${ev.id}`} priceMode="companion" />
           ))}
-          {!events.length && (
+          {!visibleEvents.length && (
             <div className="text-[14px] text-[rgb(var(--muted))]">No tienes eventos.</div>
           )}
         </div>
