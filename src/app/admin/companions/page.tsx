@@ -24,6 +24,7 @@ export default function AdminCompanionsPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [toggleActiveId, setToggleActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openSettingsId, setOpenSettingsId] = useState<string | null>(null);
 
   const [drafts, setDrafts] = useState<Record<string, { name: string; color: string }>>({});
 
@@ -218,14 +219,16 @@ export default function AdminCompanionsPage() {
         <div className="grid gap-3">
           {companions.map((c) => (
             <Card key={c.id}>
-              <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
-                <div className="grid gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
                     <div
-                      className="h-3 w-3 rounded-full"
+                      className="h-3 w-3 shrink-0 rounded-full"
                       style={{ background: drafts[c.id]?.color ?? c.color ?? "#999999" }}
                     />
-                    <div className="text-[15px] font-extrabold">{c.username}</div>
+                    <div className="truncate text-[15px] font-extrabold">
+                      {c.name || c.username}
+                    </div>
                     {!c.active && (
                       <div className="rounded-full bg-red-50 px-2 py-1 text-[12px] font-bold text-red-600">
                         Inactivo
@@ -233,73 +236,87 @@ export default function AdminCompanionsPage() {
                     )}
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label>Nombre</Label>
-                      <div className="mt-1">
-                        <Input
-                          value={drafts[c.id]?.name ?? ""}
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setOpenSettingsId((prev) => (prev === c.id ? null : c.id))
+                    }
+                    aria-expanded={openSettingsId === c.id}
+                  >
+                    ⚙️ Ajustes
+                  </Button>
+                </div>
+
+                {openSettingsId === c.id && (
+                  <div className="grid gap-4 border-t border-[rgb(var(--border))] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>Nombre</Label>
+                        <div className="mt-1">
+                          <Input
+                            value={drafts[c.id]?.name ?? ""}
+                            onChange={(e) =>
+                              setDrafts((prev) => ({
+                                ...prev,
+                                [c.id]: {
+                                  ...prev[c.id],
+                                  name: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Color</Label>
+                        <input
+                          type="color"
+                          value={drafts[c.id]?.color ?? "#999999"}
                           onChange={(e) =>
                             setDrafts((prev) => ({
                               ...prev,
                               [c.id]: {
                                 ...prev[c.id],
-                                name: e.target.value,
+                                color: e.target.value,
                               },
                             }))
                           }
+                          className="mt-1 h-10 w-full rounded-xl border border-gray-200"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <Label>Color</Label>
-                      <input
-                        type="color"
-                        value={drafts[c.id]?.color ?? "#999999"}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [c.id]: {
-                              ...prev[c.id],
-                              color: e.target.value,
-                            },
-                          }))
-                        }
-                        className="mt-1 h-10 w-full rounded-xl border border-gray-200"
-                      />
+                    <div className="flex flex-col gap-2 sm:flex-row md:flex-col md:items-stretch">
+                      <Button
+                        variant="ghost"
+                        onClick={() => resetPassword(c.id, c.username)}
+                        disabled={loadingResetId === c.id}
+                      >
+                        {loadingResetId === c.id ? "Generando…" : "Reset pass"}
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleActive(c)}
+                        disabled={toggleActiveId === c.id}
+                      >
+                        {toggleActiveId === c.id
+                          ? "Actualizando…"
+                          : c.active
+                          ? "Desactivar"
+                          : "Activar"}
+                      </Button>
+
+                      <Button
+                        onClick={() => saveCompanion(c.id)}
+                        disabled={savingId === c.id}
+                      >
+                        {savingId === c.id ? "Guardando…" : "Guardar"}
+                      </Button>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row md:flex-col md:items-stretch">
-                  <Button
-                    variant="ghost"
-                    onClick={() => resetPassword(c.id, c.username)}
-                    disabled={loadingResetId === c.id}
-                  >
-                    {loadingResetId === c.id ? "Generando…" : "Reset pass"}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    onClick={() => toggleActive(c)}
-                    disabled={toggleActiveId === c.id}
-                  >
-                    {toggleActiveId === c.id
-                      ? "Actualizando…"
-                      : c.active
-                      ? "Desactivar"
-                      : "Activar"}
-                  </Button>
-
-                  <Button
-                    onClick={() => saveCompanion(c.id)}
-                    disabled={savingId === c.id}
-                  >
-                    {savingId === c.id ? "Guardando…" : "Guardar"}
-                  </Button>
-                </div>
+                )}
               </div>
             </Card>
           ))}
